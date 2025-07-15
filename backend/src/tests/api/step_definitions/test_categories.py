@@ -2,6 +2,7 @@ from pytest_bdd import scenario, given, when, then, parsers
 from fastapi.testclient import TestClient
 from src.main import app
 import pytest
+from Utils.categorias_utils import salvar_categorias  # Importar salvar_categorias
 
 client = TestClient(app)
 
@@ -56,13 +57,11 @@ def garantir_categoria_nao_existe(nome):
 @given(parsers.parse('já existe uma categoria chamada "{nome}"'))
 def garantir_categoria_existe(nome):
     """ 
-    Cria a categoria se ela não existir,
-    caso outro teste tenha removido esta categoria
+    Garante que apenas a categoria especificada existe,
+    limpando o arquivo JSON antes de criar a categoria
     """
-    resp = client.get("/categorias/")
-    categorias = resp.json()
-    if nome not in categorias:
-        client.post("/categorias/", json={"categoria": nome})
+    salvar_categorias([])  # Limpa o arquivo dados.json
+    client.post("/categorias/", json={"categoria": nome})
 
 # Steps When para criação, atualização e exclusão de categorias
 
@@ -124,7 +123,7 @@ def erro_nome_obrigatorio(context):
 def sucesso_exclusao(context):
     # Verifica se a resposta foi sucesso com código 200
     assert context["response"].status_code == 200
-    assert "removida" in context["response"].json()["mensagem"].lower()
+    assert "removida" in context["response"].json()["mensagem"].lower()  # Corrigido de 'lowern' para 'lower'
 
 @then('o sistema deve exibir uma mensagem de erro indicando que a categoria não foi encontrada')
 def erro_categoria_nao_encontrada(context):
